@@ -1,8 +1,11 @@
 #pragma once
 
 #include <string>
+#include <array>
 
 // Binary-coded decimal.
+// NOTE: Decimal point is fixed only for one operand,
+// so you can have represent both 1.2345 and 1234.5.
 class BCD {
 public:
     BCD() = default;
@@ -28,6 +31,7 @@ public:
 
     // NOTE: We don't care about correct decimal rounding when aligns operands before addition -
     // just truncate the longest fractional part to the shortest one.
+    // The latest means that we can get not the best possible precision.
     BCD operator+(const BCD& right_op) const {
         BCD left_op_copy = *this;
         BCD right_op_copy = right_op;
@@ -94,7 +98,64 @@ public:
         return left_op_copy + right_op_copy;
     };
 
+    // NOTE: We don't care about overflow.
     BCD operator*(const BCD& right_op) const {
+        BCD left_op_copy = *this;
+        BCD right_op_copy = right_op;
+
+        // Extract decimal digits from least significant to most significant.
+        std::array<int, 8> left_op_digits, right_op_digits;
+        for (int i = 0; i < 8; i++) {
+            left_op_digits[i] = (left_op_copy.rep >> (i * 4)) & 0xf;
+            right_op_digits[i] = (right_op_copy.rep >> (i * 4)) & 0xf;
+        }
+
+        // Long multiplication without carry.
+        std::array<int, 16> result_digits{};
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                result_digits[i + j] += right_op_digits[i] * left_op_digits[j];
+            }
+        }
+
+        // Carry propagation.
+        for (int i = 0; i < 15; ++i) {
+            if (result_digits[i] >= 10) {
+                result_digits[i + 1] += result_digits[i] / 10;
+                result_digits[i] = result_digits[i] % 10;
+            }
+        }
+
+        // Temporarily pack true product without any loss.
+        int prod_frac_count = left_op_copy.frac_digits_count + right_op_copy.frac_digits_count;
+        uint64_t extended_rep = 0;
+        int packed_cnt = 0;
+        for (int i = 15; i >= 0; i--) {
+            const int current_digit = result_digits[i];
+            if (current_digit == 0 && extended_rep == 0) // Skip only leading zero digits.
+                continue;
+
+            extended_rep = extended_rep | static_cast<uint64_t>(current_digit) << (i * 4);
+            packed_cnt++;
+        }
+        // Align to fit into 32 bit.
+        if (packed_cnt > 8) {
+            const int diff = packed_cnt - 8;
+            extended_rep = extended_rep >> diff * 4;
+            prod_frac_count -= diff;
+
+            // Totally lost fractional part.
+            // So, we will print only high-order part of the true product.
+            if (prod_frac_count < 0)
+                prod_frac_count = 0;
+        }
+
+        BCD res;
+        res.rep = static_cast<uint32_t>(extended_rep);
+        res.frac_digits_count = prod_frac_count;
+        res.is_negative = left_op_copy.is_negative ^ right_op_copy.is_negative;
+
+        return res;
     };
 
     BCD operator/(const BCD& right_op) const {

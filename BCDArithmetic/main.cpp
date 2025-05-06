@@ -76,6 +76,7 @@ void test_addition() {
 
 void test_subtraction() {
     std::cout << "SUBTRACTION\n";
+
     test_subtraction_1();
 
     std::cout << '\n';
@@ -88,11 +89,39 @@ void test_subtraction() {
     test_subtraction_4();
 }
 
+void test_multiplication_1() {
+    BCD a("116.45");
+    BCD b("37374.042");
+
+    std::cout << std::format("{} * {} = {}\n", a.to_string(), b.to_string(), (a * b).to_string());
+}
+
+void test_multiplication_2() {
+    BCD a("37374.042");
+    BCD b("37374.042");
+
+    std::cout << std::format("{} * {} = {}\n", a.to_string(), b.to_string(), (a * b).to_string());
+}
+
+void test_multiplication() {
+    std::cout << "MULTIPLICATION\n";
+
+    test_multiplication_1();
+
+    std::cout << '\n';
+    test_multiplication_2();
+}
+
 int main() {
+    /*
     test_addition();
 
     std::cout << '\n';
     test_subtraction();
+    */
+
+    std::cout << '\n';
+    test_multiplication();
 
     return 0;
 }

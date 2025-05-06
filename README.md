@@ -8,3 +8,6 @@ Implementation of arithmetic in binary-coded decimal (BCD).
 - Subtraction.
 - Multiplication.
 - Division.
+
+## Documentation
+/docs contains some notes.
