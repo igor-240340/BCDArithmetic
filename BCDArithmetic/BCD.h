@@ -31,7 +31,7 @@ public:
 
     // NOTE: We don't care about correct decimal rounding when aligns operands before addition -
     // just truncate the longest fractional part to the shortest one.
-    // The latest means that we can get not the best possible precision.
+    // The latest means that we can get not the best possible precision in 32 bit representation.
     BCD operator+(const BCD& right_op) const {
         BCD left_op_copy = *this;
         BCD right_op_copy = right_op;
@@ -90,15 +90,13 @@ public:
     };
 
     BCD operator-(const BCD& right_op) const {
-        BCD left_op_copy = *this;
         BCD right_op_copy = right_op;
-
         right_op_copy.is_negative = !right_op_copy.is_negative; // a - b = a + -b.
 
-        return left_op_copy + right_op_copy;
+        return *this + right_op_copy;
     };
 
-    // NOTE: We don't care about overflow.
+    // NOTE: We don't care about an overflow.
     BCD operator*(const BCD& right_op) const {
         BCD left_op_copy = *this;
         BCD right_op_copy = right_op;
@@ -132,7 +130,9 @@ public:
         int packed_cnt = 0;
         for (int i = 15; i >= 0; i--) {
             const int current_digit = result_digits[i];
-            if (current_digit == 0 && extended_rep == 0) // Skip only leading zero digits.
+            const int first_non_frac_digit_index = prod_frac_count;
+            // Skip only leading zero digits except one leading zero of the integer part if result < 1.
+            if (current_digit == 0 && extended_rep == 0 && i > first_non_frac_digit_index)
                 continue;
 
             extended_rep = extended_rep | static_cast<uint64_t>(current_digit) << (i * 4);
@@ -164,11 +164,13 @@ public:
     std::string to_string() {
         std::string res;
         for (int i = 0; i < 8; i++) {
-            if (i == 8 - frac_digits_count)
+            // Check for the first fractional digit.
+            if (i == (8 - frac_digits_count))
                 res += '.';
 
             const char digit = ((rep >> (7 - i) * 4) & 0xf) + '0';
-            if ((digit == '0') && res.empty()) // Skip leading zeroes.
+            // Skip leading zeroes except one leading zero of the integer part if result < 1.
+            if ((digit == '0') && res.empty() && i < (8 - frac_digits_count - 1))
                 continue;
 
             res += digit;

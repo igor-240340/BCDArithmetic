@@ -100,6 +100,28 @@ void test_multiplication_2() {
     BCD a("37374.042");
     BCD b("37374.042");
 
+    // True prod is 1396819015.417764, but after packing into uint32_t we have 13968190.
+    std::cout << std::format("{} * {} = {}\n", a.to_string(), b.to_string(), (a * b).to_string());
+}
+
+void test_multiplication_3() {
+    BCD a("-116.45");
+    BCD b("37374.042");
+
+    std::cout << std::format("{} * {} = {}\n", a.to_string(), b.to_string(), (a * b).to_string());
+}
+
+void test_multiplication_4() {
+    BCD a("-116.45");
+    BCD b("-37374.042");
+
+    std::cout << std::format("{} * {} = {}\n", a.to_string(), b.to_string(), (a * b).to_string());
+}
+
+void test_multiplication_5() {
+    BCD a("0.0020013");
+    BCD b("-0.042");
+
     std::cout << std::format("{} * {} = {}\n", a.to_string(), b.to_string(), (a * b).to_string());
 }
 
@@ -110,15 +132,22 @@ void test_multiplication() {
 
     std::cout << '\n';
     test_multiplication_2();
+
+    std::cout << '\n';
+    test_multiplication_3();
+
+    std::cout << '\n';
+    test_multiplication_4();
+
+    std::cout << '\n';
+    test_multiplication_5();
 }
 
 int main() {
-    /*
     test_addition();
 
     std::cout << '\n';
     test_subtraction();
-    */
 
     std::cout << '\n';
     test_multiplication();
