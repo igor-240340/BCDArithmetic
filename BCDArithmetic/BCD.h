@@ -2,6 +2,8 @@
 
 #include <string>
 #include <array>
+#include <vector>
+#include <algorithm>
 
 // Binary-coded decimal.
 // NOTE: Decimal point is fixed only for one operand,

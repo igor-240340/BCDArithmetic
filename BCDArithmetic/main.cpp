@@ -143,7 +143,26 @@ void test_multiplication() {
     test_multiplication_5();
 }
 
+void test_division_1() {
+    BCD a("116.45");
+    BCD b("37374.042");
+
+    std::cout << std::format("{} / {} = {}\n", a.to_string(), b.to_string(), (a / b).to_string());
+}
+
+void test_division() {
+    std::cout << "DIVISION\n";
+
+    test_division_1();
+
+    /*
+    std::cout << '\n';
+    test_division_2();
+    */
+}
+
 int main() {
+    /*
     test_addition();
 
     std::cout << '\n';
@@ -151,6 +170,10 @@ int main() {
 
     std::cout << '\n';
     test_multiplication();
+    */
+
+    std::cout << '\n';
+    test_division();
 
     return 0;
 }
