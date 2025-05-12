@@ -160,7 +160,37 @@ public:
         return res;
     };
 
+    // NOTE: Naive decimal long division.
     BCD operator/(const BCD& right_op) const {
+        BCD left_op_copy = *this;
+        BCD right_op_copy = right_op;
+
+        const int dividend_frac_len = left_op_copy.frac_digits_count;
+        const int divisor_frac_len = right_op_copy.frac_digits_count;
+
+        // Unpack.
+        // shift of dividend: 7+(7-frac_count). Filling left with zeroes: 14+(8-int_count).
+        // shift of divisor: (7-frac_count) + (14+7). max = 999.999.990.000.000.
+        std::vector<uint8_t> remainder;
+        std::vector<uint8_t> divisor;
+        for (int i = 7; i >= 0; i--) {
+            remainder.push_back((left_op_copy.rep >> (i * 4)) & 0xf);
+            divisor.push_back((right_op_copy.rep >> (i * 4)) & 0xf);
+        }
+
+        // Align the dividend in the 36-length decimal grid.
+        // (dividend * 10^7) * 10^7. Get rid of fractional part and make some space for 7 fractional digits of the quotient.
+        remainder.insert(remainder.end(), 7 + (7 - dividend_frac_len), 0);
+        const int remainder_int_part_len = 8 - dividend_frac_len;
+        remainder.insert(remainder.begin(), 14 + (8 - remainder_int_part_len), 0);
+
+        // Align the divisor so on the first iteration it is the partial product divisor * 10^(14+7), where 7 is for 7 fractional digits.
+        divisor.insert(divisor.end(), (7 - divisor_frac_len) + (14 + 7), 0);
+        const int divisor_int_part_len = 8 - divisor_frac_len;
+        divisor.insert(divisor.begin(), 8 - divisor_int_part_len, 0);
+
+        BCD res;
+        return res;
     }
 
     std::string to_string() {
