@@ -7,7 +7,7 @@
 
 // Binary-coded decimal.
 // NOTE: Decimal point is fixed only for one operand,
-// so you can have represent both 1.2345 and 1234.5.
+// so you can for example represent both 1.2345 and 1234.5.
 class BCD {
 public:
     BCD() = default;
@@ -61,6 +61,8 @@ public:
                 sum = sum % 10;
                 res.rep = res.rep | (static_cast<uint32_t>(sum) << (i * 4));
             }
+
+            // NOTE: If carry is not zero here then we've got an overflow.
         }
         else {
             if (left_op_copy.rep < right_op_copy.rep) {
@@ -85,8 +87,6 @@ public:
                 res.rep = res.rep | (static_cast<uint32_t>(diff) << (i * 4));
             }
         }
-
-        // NOTE: If carry is not zero here then we've got an overflow.
 
         return res;
     };
@@ -160,7 +160,13 @@ public:
         return res;
     };
 
-    // NOTE: Naive decimal long division.
+    // Naive decimal long division.
+    // NOTE: Internally it calculates the true quotient with 7 decimal digits
+    // but then packes only 8 digits starting with the integer part.
+    // So, it can truncate fractional part and even the lower part of the integer part.
+    //
+    // It can also be optimized by maintaining scaled divisor immovable as we usually do in a binary division
+    // but we don't care as it's purely educational project to catch the concepts.
     BCD operator/(const BCD& right_op) const {
         BCD left_op_copy = *this;
         BCD right_op_copy = right_op;
@@ -172,10 +178,10 @@ public:
         // shift of dividend: 7+(7-frac_count). Filling left with zeroes: 14+(8-int_count).
         // shift of divisor: (7-frac_count) + (14+7). max = 999.999.990.000.000.
         std::vector<uint8_t> remainder;
-        std::vector<uint8_t> divisor;
+        std::vector<uint8_t> divisor_scaled;
         for (int i = 7; i >= 0; i--) {
             remainder.push_back((left_op_copy.rep >> (i * 4)) & 0xf);
-            divisor.push_back((right_op_copy.rep >> (i * 4)) & 0xf);
+            divisor_scaled.push_back((right_op_copy.rep >> (i * 4)) & 0xf);
         }
 
         // Align the dividend in the 36-length decimal grid.
@@ -185,11 +191,40 @@ public:
         remainder.insert(remainder.begin(), 14 + (8 - remainder_int_part_len), 0);
 
         // Align the divisor so on the first iteration it is the partial product divisor * 10^(14+7), where 7 is for 7 fractional digits.
-        divisor.insert(divisor.end(), (7 - divisor_frac_len) + (14 + 7), 0);
+        divisor_scaled.insert(divisor_scaled.end(), (7 - divisor_frac_len) + (14 + 7), 0);
         const int divisor_int_part_len = 8 - divisor_frac_len;
-        divisor.insert(divisor.begin(), 8 - divisor_int_part_len, 0);
+        divisor_scaled.insert(divisor_scaled.begin(), 8 - divisor_int_part_len, 0);
 
+        std::array<uint8_t, 22> quotient{};
+        for (int i = 0; i < 22; i++) {
+            int counter = 0;
+            while (difference_can_be_positive(remainder, divisor_scaled)) {
+                subtract(remainder, divisor_scaled);
+                counter++;
+            }
+            quotient[i] = counter;
+
+            // Downscale the divisor - shift right on one decimal place.
+            divisor_scaled.pop_back();
+            divisor_scaled.insert(divisor_scaled.begin(), 0);
+        }
+
+        // Now the quotient contains 7 fractional digits in the high part.
         BCD res;
+        const int int_part_begin = 14;
+        for (int i = 0, unpacked = 8; i < quotient.size() && unpacked > 0; i++) {
+            // Skip only leading zeroes of the integer part excluding the very first integer digit.
+            if (quotient[i] == 0 && unpacked == 8 && i < int_part_begin)
+                continue;
+
+            res.rep = res.rep | (quotient[i] << (unpacked - 1) * 4);
+            unpacked--;
+
+            // We are in the fractional part of the quotient.
+            if (i > int_part_begin)
+                res.frac_digits_count++;
+        }
+
         return res;
     }
 
@@ -224,5 +259,43 @@ private:
         rep = rep >> (diff * 4);
 
         frac_digits_count = target_count;
+    }
+
+    // NOTE: The divisor is scaled by the weight of the current digit of the quotient.
+    static bool difference_can_be_positive(const std::vector<uint8_t>& remainder, const std::vector<uint8_t>& divisor_scaled) {
+        size_t rem_begin = 0; // The index of the first non-zero digit of the remainder.
+        while (rem_begin < remainder.size() && remainder[rem_begin] == 0)
+            rem_begin++;
+
+        size_t div_begin = 0; // The same for divisor_scaled.
+        while (div_begin < divisor_scaled.size() && divisor_scaled[div_begin] == 0)
+            div_begin++;
+
+        if (rem_begin < div_begin) return true;
+        if (rem_begin > div_begin) return false;
+
+        size_t i = rem_begin; // rem_begin == div_begin.
+        while (i < remainder.size()) {
+            if (remainder[i] > divisor_scaled[i]) return true;
+            if (remainder[i] < divisor_scaled[i]) return false;
+            i++;
+        }
+
+        return true; // remainder == divisor_scaled.
+    }
+
+    static void subtract(std::vector<uint8_t>& remainder, const std::vector<uint8_t>& divisor_scaled) {
+        uint8_t borrow = 0;
+        for (int i = 35; i >= 0; i--) {
+            int8_t diff = (remainder[i] - borrow) - divisor_scaled[i];
+            if (diff >= 0)
+                borrow = 0;
+            else {
+                diff += 10;
+                borrow = 1;
+            }
+
+            remainder[i] = static_cast<uint8_t>(diff);
+        }
     }
 };
