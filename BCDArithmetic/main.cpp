@@ -223,6 +223,20 @@ void test_division_11() {
     std::cout << std::format("{} / {} = {}\n", a.to_string(), b.to_string(), (a / b).to_string());
 }
 
+void test_division_12() {
+    BCD a("-123.2343");
+    BCD b("3.737425");
+
+    std::cout << std::format("{} / {} = {}\n", a.to_string(), b.to_string(), (a / b).to_string());
+}
+
+void test_division_13() {
+    BCD a("-123.2343");
+    BCD b("-3.737425");
+
+    std::cout << std::format("{} / {} = {}\n", a.to_string(), b.to_string(), (a / b).to_string());
+}
+
 void test_division() {
     std::cout << "DIVISION\n";
 
@@ -257,6 +271,12 @@ void test_division() {
 
     std::cout << '\n';
     test_division_11();
+
+    std::cout << '\n';
+    test_division_12();
+
+    std::cout << '\n';
+    test_division_13();
 }
 
 int main() {

@@ -127,12 +127,12 @@ public:
         }
 
         // Temporarily pack true product without any loss.
-        int prod_frac_count = left_op_copy.frac_digits_count + right_op_copy.frac_digits_count;
+        int prod_frac_len = left_op_copy.frac_digits_count + right_op_copy.frac_digits_count;
         uint64_t extended_rep = 0;
         int packed_cnt = 0;
         for (int i = 15; i >= 0; i--) {
             const int current_digit = result_digits[i];
-            const int first_non_frac_digit_index = prod_frac_count;
+            const int first_non_frac_digit_index = prod_frac_len;
             // Skip only leading zero digits except one leading zero of the integer part if result < 1.
             if (current_digit == 0 && extended_rep == 0 && i > first_non_frac_digit_index)
                 continue;
@@ -144,17 +144,17 @@ public:
         if (packed_cnt > 8) {
             const int diff = packed_cnt - 8;
             extended_rep = extended_rep >> diff * 4;
-            prod_frac_count -= diff;
+            prod_frac_len -= diff;
 
             // Totally lost fractional part.
             // So, we will print only high-order part of the true product.
-            if (prod_frac_count < 0)
-                prod_frac_count = 0;
+            if (prod_frac_len < 0)
+                prod_frac_len = 0;
         }
 
         BCD res;
         res.rep = static_cast<uint32_t>(extended_rep);
-        res.frac_digits_count = prod_frac_count;
+        res.frac_digits_count = prod_frac_len;
         res.is_negative = left_op_copy.is_negative ^ right_op_copy.is_negative;
 
         return res;
@@ -224,6 +224,7 @@ public:
             if (i > int_part_begin)
                 res.frac_digits_count++;
         }
+        res.is_negative = left_op_copy.is_negative ^ right_op_copy.is_negative;
 
         return res;
     }
