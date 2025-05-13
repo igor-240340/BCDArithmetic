@@ -28,6 +28,7 @@ int main() {
 
     return 0;
 }
+```cpp
 
 ## Documentation
 /docs contains a simulation of the decimal grid for some arithmetic operations.
