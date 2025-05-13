@@ -125,6 +125,22 @@ void test_multiplication_5() {
     std::cout << std::format("{} * {} = {}\n", a.to_string(), b.to_string(), (a * b).to_string());
 }
 
+// NOTE: True prod is 9999999800000001 but will truncate and show 99999998.
+void test_multiplication_6() {
+    BCD a("99999999");
+    BCD b("99999999");
+
+    std::cout << std::format("{} * {} = {}\n", a.to_string(), b.to_string(), (a * b).to_string());
+}
+
+// NOTE: True product is 0.00000000000001 but will truncate and show 0.0000000.
+void test_multiplication_7() {
+    BCD a("0.0000001");
+    BCD b("0.0000001");
+
+    std::cout << std::format("{} * {} = {}\n", a.to_string(), b.to_string(), (a * b).to_string());
+}
+
 void test_multiplication() {
     std::cout << "MULTIPLICATION\n";
 
@@ -141,6 +157,12 @@ void test_multiplication() {
 
     std::cout << '\n';
     test_multiplication_5();
+
+    std::cout << '\n';
+    test_multiplication_6();
+
+    std::cout << '\n';
+    test_multiplication_7();
 }
 
 void test_division_1() {
