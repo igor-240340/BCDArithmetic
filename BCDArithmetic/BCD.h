@@ -161,7 +161,7 @@ public:
     };
 
     // Naive decimal long division.
-    // NOTE: Internally it calculates the true quotient with 7 decimal digits
+    // NOTE: Internally it calculates the true quotient with 7 fractional digits
     // but then packes only 8 digits starting with the integer part.
     // So, it can truncate fractional part and even the lower part of the integer part.
     //
